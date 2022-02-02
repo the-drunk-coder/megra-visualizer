@@ -1,0 +1,9 @@
+{
+    "name": "megra-visualizer-web-app",
+    "version": "0.0.3",
+    "ignore": [],
+    "dependencies": {
+        "osc": "2.4.0",
+        "cytoscape": "3.15.0"
+    }
+}
