@@ -4,7 +4,10 @@
   <title>Mégra Visualizer</title>
   <meta charset="UTF-8" />        
   <script src="/node_modules/osc/dist/osc-browser.js"></script>
-  <script src="/node_modules/cytoscape/dist/cytoscape.min.js"></script> 
+  <script src="/node_modules/cytoscape/dist/cytoscape.min.js"></script>
+  <script src="/node_modules/layout-base/layout-base.js"></script>
+  <script src="/node_modules/cose-base/cose-base.js"></script>
+  <script src="/node_modules/cytoscape-fcose/cytoscape-fcose.js"></script>
 </head>
 
 <style>
@@ -55,10 +58,10 @@
       if(numLayouts > 1) {
 	  var height = (100 / rows) - 0.01;
 	  var curTop = 0;
-	 
+	  
 	  var i;
+	  
 	  for (i = 0; i < numLayouts; i++) {
-
 	      var el = document.getElementById('div-' + objKeys[i]);
 	      
 	      el.style.top = `${curTop}%`;    
@@ -73,7 +76,7 @@
 	      
 	      layouts[objKeys[i]].resize();
 	      layouts[objKeys[i]].fit();
-	      
+	      	      
 	      if(i % 2 === 1){
 		  curTop += height;
 	      }
@@ -90,21 +93,8 @@
       case "/graph/add": {
 	  var name = msg.args[0].value;
 
-	  if(!edges.hasOwnProperty(name)){
-	      edges[name] = {};
-	  }
-	  if(!nodes.hasOwnProperty(name)){
-	      nodes[name] = {};
-	  }
-	  if(!edges[name].hasOwnProperty('current')){
-	      edges[name]['current'] = [];
-	  }
-	  if(!nodes[name].hasOwnProperty('current')){
-	      nodes[name]['current'] = [];
-	  }
-
-	  edges[name]['added'] = [];
-	  nodes[name]['added'] = [];
+	  edges[name] = [];	  
+	  nodes[name] = [];
 	  
 	  if(!layouts.hasOwnProperty(name)) {
 	      var divkey = 'div-' + name;
@@ -122,15 +112,15 @@
 			  style: {
 			      'background-color': '#afa',
 			      'color' : '#111',
-			      'font-family' : 'Comic Mono, monospace',
+			      //'font-family' : 'Comic Mono, monospace',
 			      'font-size' : '11px',
 			      "text-valign": "center",
 			      "text-halign": "center",
 			      "text-outline-color": "#fff",
-			      "text-outline-width": "1.5px",
-			      "border-width": "2px",
-			      "border-color": "#aaa",
-			      'shape': 'ellipse',
+			      //"text-outline-width": "1.5px",
+			      //"border-width": "2px",
+			      //"border-color": "#aaa",
+			      //'shape': 'ellipse',
 			      'content': 'data(name)'
 			  }
 		      },
@@ -148,7 +138,7 @@
 			      'target-arrow-shape': 'triangle',
 			      'width' : 'data(width)',
 			      'content' : 'data(label)',
-			      'font-family' : 'Comic Mono, monospace',
+			      //'font-family' : 'Comic Mono, monospace',
 			      'color' : '#000',
 			      'font-size' : '7px',
 			      "text-outline-color": "#fff",
@@ -157,7 +147,9 @@
 		      },
 		  ]
 	      });
-	  }
+	  } else {	      
+	      layouts[name].elements().remove();
+	  };
 	  
 	  break;
       }
@@ -178,7 +170,7 @@
 		  }
 	      }]);
 	  }
-	  nodes[name].added.push(node_id);
+	  nodes[name].push(node_id);
 	  
 	  break;
       }
@@ -200,16 +192,14 @@
 	  var dest = msg.args[2].value;
 	  var label = msg.args[3].value;
 	  var prob = msg.args[4].value;
-
-	  var edge_id = name + '-edge-n' + src + '-n' + dest;
-
+	  var edge_id = name + '-edge-n' + src + '-n' + dest;	  
 	  var e = layouts[name].$('#' + edge_id);
 	  if(e.length > 0) {
 	      e.data("label", label);
 	      e.data("width", thickness(prob));
 	  } 
-
-	  edges[name].added.push({
+	  
+	  edges[name].push({
 	      group: "edges",
 	      data: {
 		  id: edge_id,  // giving edges an id helps avoid duplicates
@@ -226,27 +216,13 @@
 	  var name = msg.args[0].value;
 	  var layout = msg.args[1].value.toLowerCase();	  
 	  
-	  nodes[name].current.forEach(function(nid) {
-	      if(!nodes[name].added.includes(nid)) {
-		  layouts[name].$('#' + nid).remove();
-	      }
-	  });
-
-	  nodes[name].current = nodes[name].added.slice();
+	  layouts[name].add(edges[name]);
 	  
-	  edges[name].current.forEach(function(edge) {
-	      if(!edges[name].added.includes(edge)) {
-		  layouts[name].$('#' + edge.data.id).remove();
-	      }
-	  });
-
-	  // add edges
-	  edges[name].current = edges[name].added.slice();
-	  layouts[name].add(edges[name].current);
-
 	  // run current layout
 	  layouts[name].layout({
-	      name: layout 
+	      name: 'fcose',
+	      animate: true,
+	      fit: true,	      
 	  }).run();
 
 	  // resize containers
@@ -262,7 +238,7 @@
 
 	  delete edges[name];
 	  delete nodes[name];
-  
+	  
 	  var elem = document.getElementById('div-' + name);
 	  elem.parentNode.removeChild(elem);
 
