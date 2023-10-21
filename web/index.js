@@ -1,7 +1,8 @@
-
 var layouts = {};
 var edges = {};
 var nodes = {};
+var new_edges = {};
+var new_nodes = {};
 var last_active = {};
 
 // calculate edge thickness from probablity
@@ -58,8 +59,8 @@ oscPort.on("message", function (msg) {
     case "/graph/add": {
 	var name = msg.args[0].value;
 
-	edges[name] = [];	  
-	nodes[name] = [];
+	new_edges[name] = [];	  
+	new_nodes[name] = [];
 	
 	if(!layouts.hasOwnProperty(name)) {
 	    var divkey = 'div-' + name;
@@ -112,8 +113,6 @@ oscPort.on("message", function (msg) {
 		    },
 		]
 	    });
-	} else {	      
-	    layouts[name].elements().remove();
 	};
 	
 	break;
@@ -122,20 +121,14 @@ oscPort.on("message", function (msg) {
 	var name = msg.args[0].value;
 	var node_id = name + '-n' + msg.args[1].value;
 	var node_label = msg.args[2].value.trim();
-
-	var n = layouts[name].$('#' + node_id);
-	if(n.length > 0) {
-	    n.data("name", node_label);
-	} else {
-	    layouts[name].add([{
-		group: "nodes",
-		data: {
-		    id: node_id,
-		    name: node_label
-		}
-	    }]);
-	}
-	nodes[name].push(node_id);
+	
+	new_nodes[name].push({
+	    group: "nodes",
+	    data: {
+		id: node_id,
+		name: node_label
+	    }
+	});
 	
 	break;
     }
@@ -164,7 +157,7 @@ oscPort.on("message", function (msg) {
 	    e.data("width", thickness(prob));
 	} 
 	
-	edges[name].push({
+	new_edges[name].push({
 	    group: "edges",
 	    data: {
 		id: edge_id,  // giving edges an id helps avoid duplicates
@@ -177,13 +170,38 @@ oscPort.on("message", function (msg) {
 	
 	break;
     }
-    case "/render": {	  
+    case "/render": {
 	var name = msg.args[0].value;
-	var layout = msg.args[1].value.toLowerCase();	  
+	var layout = msg.args[1].value.toLowerCase();
 	
-	layouts[name].add(edges[name]);
+	//console.log("REDNER");
+
+	if(!edges.hasOwnProperty(name)) {
+	    edges[name] = [];
+	}
+
+	if(!nodes.hasOwnProperty(name)) {
+	    nodes[name] = [];
+	}
+			
+	let incoming_nodes = new_nodes[name].filter(x => !nodes[name].includes(x));
+	let incoming_edges = new_edges[name].filter(x => !edges[name].includes(x));
+
+	//console.log(incoming_nodes);
+	//console.log(incoming_edges);
 	
-	// run current layout
+	let removed_nodes = nodes[name].filter(x => !new_nodes[name].includes(x));
+	let removed_edges = edges[name].filter(x => !new_edges[name].includes(x));
+		
+	layouts[name].elements().remove(removed_nodes);
+	layouts[name].elements().remove(removed_edges);
+	
+	layouts[name].add(incoming_nodes);
+	layouts[name].add(incoming_edges);
+	
+	edges[name] = new_edges[name];
+	nodes[name] = new_nodes[name];
+		
 	layouts[name].layout({
 	    name: 'fcose',
 	    animate: true,
