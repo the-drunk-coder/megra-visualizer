@@ -4,6 +4,7 @@ var nodes = {};
 var new_edges = {};
 var new_nodes = {};
 var last_active = {};
+var num_changed = false;
 
 // calculate edge thickness from probablity
 function thickness(prob) {
@@ -39,15 +40,11 @@ function resizeAll() {
 	    } else {
 		el.style.left = "50%";
 	    }
-	    
-	    layouts[objKeys[i]].resize();
-	    layouts[objKeys[i]].fit();
-	    
+	    	    
 	    if(i % 2 === 1){
 		curTop += height;
 	    }
-	    console.log("top: " + curTop);
-	} 
+	}
     }
 }
 
@@ -78,15 +75,11 @@ oscPort.on("message", function (msg) {
 			style: {
 			    'background-color': '#afa',
 			    'color' : '#111',
-			    //'font-family' : 'Comic Mono, monospace',
+			    'font-family' : 'mononoki, monospace',
 			    'font-size' : '11px',
 			    "text-valign": "center",
 			    "text-halign": "center",
 			    "text-outline-color": "#fff",
-			    //"text-outline-width": "1.5px",
-			    //"border-width": "2px",
-			    //"border-color": "#aaa",
-			    //'shape': 'ellipse',
 			    'content': 'data(name)'
 			}
 		    },
@@ -104,7 +97,7 @@ oscPort.on("message", function (msg) {
 			    'target-arrow-shape': 'triangle',
 			    'width' : 'data(width)',
 			    'content' : 'data(label)',
-			    //'font-family' : 'Comic Mono, monospace',
+			    'font-family' : 'mononoki, monospace',
 			    'color' : '#000',
 			    'font-size' : '7px',
 			    "text-outline-color": "#fff",
@@ -113,8 +106,11 @@ oscPort.on("message", function (msg) {
 		    },
 		]
 	    });
+
+	    resizeAll();
+	    num_changed = true;
 	};
-	
+		
 	break;
     }
     case "/node/add": {
@@ -151,6 +147,7 @@ oscPort.on("message", function (msg) {
 	var label = msg.args[3].value;
 	var prob = msg.args[4].value;
 	var edge_id = name + '-edge-n' + src + '-n' + dest;	  
+
 	var e = layouts[name].$('#' + edge_id);
 	if(e.length > 0) {
 	    e.data("label", label);
@@ -173,9 +170,10 @@ oscPort.on("message", function (msg) {
     case "/render": {
 	var name = msg.args[0].value;
 	var layout = msg.args[1].value.toLowerCase();
-	
-	//console.log("REDNER");
 
+	// in the future, compare incoming and current and only add/remove what's needed ..
+	
+	/*
 	if(!edges.hasOwnProperty(name)) {
 	    edges[name] = [];
 	}
@@ -183,33 +181,44 @@ oscPort.on("message", function (msg) {
 	if(!nodes.hasOwnProperty(name)) {
 	    nodes[name] = [];
 	}
-			
+	
 	let incoming_nodes = new_nodes[name].filter(x => !nodes[name].includes(x));
 	let incoming_edges = new_edges[name].filter(x => !edges[name].includes(x));
-
-	//console.log(incoming_nodes);
-	//console.log(incoming_edges);
 	
 	let removed_nodes = nodes[name].filter(x => !new_nodes[name].includes(x));
 	let removed_edges = edges[name].filter(x => !new_edges[name].includes(x));
 		
 	layouts[name].elements().remove(removed_nodes);
 	layouts[name].elements().remove(removed_edges);
-	
-	layouts[name].add(incoming_nodes);
-	layouts[name].add(incoming_edges);
-	
-	edges[name] = new_edges[name];
-	nodes[name] = new_nodes[name];
-		
-	layouts[name].layout({
-	    name: 'fcose',
-	    animate: true,
-	    fit: true,	      
-	}).run();
+	*/
 
-	// resize containers
-	resizeAll();
+	layouts[name].elements().remove();
+	
+	layouts[name].add(new_nodes[name]);
+	layouts[name].add(new_edges[name]);
+	
+	// edges[name] = new_edges[name];
+	// nodes[name] = new_nodes[name];
+
+	if (num_changed) {
+	    var objKeys = Object.keys(layouts);
+	    var numLayouts = objKeys.length;
+	    for (i = 0; i < numLayouts; i++) {
+		layouts[objKeys[i]].resize();
+		layouts[objKeys[i]].layout({
+		    name: 'fcose',
+		    animate: true,
+		    fit: true,	      
+		}).run();		
+	    }	    
+	    num_changed = false;
+	} else {
+	    layouts[name].layout({
+		name: 'fcose',
+		animate: true,
+		fit: true,	      
+	    }).run();	    
+	}
 	
 	break;
     }
@@ -219,13 +228,12 @@ oscPort.on("message", function (msg) {
 	layouts[name].destroy();
 	delete layouts[name];
 
-	delete edges[name];
-	delete nodes[name];
+	//delete edges[name];
+	//delete nodes[name];
 	
 	var elem = document.getElementById('div-' + name);
 	elem.parentNode.removeChild(elem);
 
-	//resizeAll();
 	break;
     }
     }            
