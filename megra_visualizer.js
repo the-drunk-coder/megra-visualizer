@@ -21,14 +21,14 @@ var getIPAddresses = function () {
 };
 
 // Bind to a UDP socket to listen for incoming OSC events.
-var udpPort = new osc.UDPPort({
-    localAddress: "0.0.0.0",
+var udpPort = new osc.TCPSocketPort({
+    localAddress: "127.0.0.1",
     localPort: 57121
 });
 
 udpPort.on("ready", function () {
     var ipAddresses = getIPAddresses();
-    console.log("Listening for OSC over UDP.");
+    console.log("Listening for OSC over TCP.");
     ipAddresses.forEach(function (address) {
         console.log(" Host:", address + ", Port:", udpPort.options.localPort);
     });
