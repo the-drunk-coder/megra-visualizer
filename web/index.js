@@ -3,19 +3,15 @@ var edges = {};
 var nodes = {};
 var new_edges = {};
 var new_nodes = {};
-var last_active = {};
-var num_changed = false;
+var last_active = {}; // last active (selected) node for each graph
+var num_changed = false; // set to true if the number of graphs has changed 
 
 // calculate edge thickness from probablity
 function thickness(prob) {
     return 0.2 + (3.0 * (prob / 100.0));
 }
 
-var oscPort = new osc.WebSocketPort({
-    url: "ws://localhost:8081", // URL to your Web Socket server.
-    metadata: true
-});
-
+// resize containers if necessary
 function resizeAll() {
     
     var objKeys = Object.keys(layouts);
@@ -47,6 +43,24 @@ function resizeAll() {
 	}
     }
 }
+
+function nodes_diff(a, b) {
+    return a.filter(node_a => !b.some(node_b => node_b.data.id === node_a.data.id && node_b.data.name === node_a.data.name));
+};
+
+function edges_diff(a, b) {
+    return a.filter(edge_a => !b.some(edge_b =>
+	edge_b.data.id === edge_a.data.id
+	    && edge_b.data.source === edge_a.data.source
+	    && edge_b.data.target === edge_a.data.target
+	    && edge_b.data.label === edge_a.data.label
+    ));
+};
+
+var oscPort = new osc.WebSocketPort({
+    url: "ws://localhost:8081", // URL to your Web Socket server.
+    metadata: true
+});
 
 oscPort.open();
 
@@ -171,9 +185,7 @@ oscPort.on("message", function (msg) {
 	var name = msg.args[0].value;
 	var layout = msg.args[1].value.toLowerCase();
 
-	// in the future, compare incoming and current and only add/remove what's needed ..
-	
-	/*
+	// make sure these exist 
 	if(!edges.hasOwnProperty(name)) {
 	    edges[name] = [];
 	}
@@ -181,25 +193,49 @@ oscPort.on("message", function (msg) {
 	if(!nodes.hasOwnProperty(name)) {
 	    nodes[name] = [];
 	}
-	
-	let incoming_nodes = new_nodes[name].filter(x => !nodes[name].includes(x));
-	let incoming_edges = new_edges[name].filter(x => !edges[name].includes(x));
-	
-	let removed_nodes = nodes[name].filter(x => !new_nodes[name].includes(x));
-	let removed_edges = edges[name].filter(x => !new_edges[name].includes(x));
-		
-	layouts[name].elements().remove(removed_nodes);
-	layouts[name].elements().remove(removed_edges);
-	*/
 
-	layouts[name].elements().remove();
+	// check if the graph has changed ...
+	let incoming_nodes = nodes_diff(new_nodes[name], nodes[name]);
+	let incoming_edges = edges_diff(new_edges[name], edges[name]);
 	
-	layouts[name].add(new_nodes[name]);
-	layouts[name].add(new_edges[name]);
-	
-	// edges[name] = new_edges[name];
-	// nodes[name] = new_nodes[name];
+	let removed_nodes = nodes_diff(nodes[name], new_nodes[name]);
+	let removed_edges = edges_diff(edges[name], new_edges[name]);
 
+	//console.log(incoming_nodes);
+	//console.log(removed_nodes);
+	//console.log(incoming_edges);
+	//console.log(removed_edges);
+	
+	// check if the current graph changed 
+	let changed =
+	    incoming_nodes.length !== 0
+	    || incoming_edges.length !== 0
+	    || removed_nodes.length !== 0
+	    || removed_edges.length !== 0;
+
+	console.log(changed);
+	
+	// if yes, update its data
+	if (changed) {
+
+	    // console.log("applying changes");
+
+	    // remove all
+	    // not sure why it's so hard to do this selectively
+	    layouts[name].elements().remove();
+
+	    // add new
+	    layouts[name].add(new_nodes[name]);
+	    layouts[name].add(new_edges[name]);
+	    	    	   	    
+	    edges[name] = new_edges[name];
+	    nodes[name] = new_nodes[name];
+
+	    // console.log("keep");
+	}
+	
+	// either re-run all layouts if the container dimensions changed,
+	// or if the current layout changed ...
 	if (num_changed) {
 	    var objKeys = Object.keys(layouts);
 	    var numLayouts = objKeys.length;
@@ -212,7 +248,7 @@ oscPort.on("message", function (msg) {
 		}).run();		
 	    }	    
 	    num_changed = false;
-	} else {
+	} else if (changed) {
 	    layouts[name].layout({
 		name: 'fcose',
 		animate: true,
@@ -228,8 +264,10 @@ oscPort.on("message", function (msg) {
 	layouts[name].destroy();
 	delete layouts[name];
 
-	//delete edges[name];
-	//delete nodes[name];
+	delete edges[name];
+	delete nodes[name];
+	delete new_edges[name];
+	delete new_nodes[name];
 	
 	var elem = document.getElementById('div-' + name);
 	elem.parentNode.removeChild(elem);
