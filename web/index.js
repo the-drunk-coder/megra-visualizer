@@ -17,8 +17,9 @@ function resizeAll() {
     var objKeys = Object.keys(layouts);
     var numLayouts = objKeys.length;
     var rows = Math.floor((numLayouts + 1) / 2);
+    console.log(numLayouts);
 
-    if(numLayouts > 1) {
+    if(numLayouts > 0) {
 	var height = (100 / rows) - 0.01;
 	var curTop = 0;
 	
@@ -29,14 +30,19 @@ function resizeAll() {
 	    
 	    el.style.top = `${curTop}%`;    
 	    el.style.height = `${height}%`;
-	    el.style.width = "49.9%";
 	    
-	    if(i % 2 == 0) {
+	    if (numLayouts > 1) {
+		el.style.width = "49.9%";
+		if(i % 2 == 0) {
+		    el.style.left = "0";
+		} else {
+		    el.style.left = "50%";
+		}
+	    } else {		
 		el.style.left = "0";
-	    } else {
-		el.style.left = "50%";
+		el.style.width = "100.0%";		
 	    }
-	    	    
+	    	   	    	    	    
 	    if(i % 2 === 1){
 		curTop += height;
 	    }
@@ -272,6 +278,10 @@ oscPort.on("message", function (msg) {
 	var elem = document.getElementById('div-' + name);
 	elem.parentNode.removeChild(elem);
 
+	num_changed = true;
+
+	resizeAll();
+	
 	break;
     }
     }            
