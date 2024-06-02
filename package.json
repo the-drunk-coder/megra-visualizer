@@ -2,15 +2,15 @@
     "name": "megra-visualizer",
     "main": "index.js",
     "version": "0.0.2",
-    "description": "visualizer for megre",
+    "description": "visualizer for megra",
     "author": "Niklas Reppel",
     "homepage": "http://parkellipsen.de/",
     "repository": {
         "type": "git",
-        "url": "git://github.com/the-drunk-coder/megra.git"
+        "url": "git://github.com/the-drunk-coder/megra-visualizer"
     },
     "readmeFilename": "README.md",
-    "bugs": "https://github.com/the-drunk-coder/megra/issues",
+    "bugs": "https://github.com/the-drunk-coder/megra-visualizer/issues",
     "license": "GPL-3.0",
     "keywords": [
         "Open Sound Control",
