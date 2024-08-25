@@ -17,7 +17,7 @@ function resizeAll() {
     var objKeys = Object.keys(layouts);
     var numLayouts = objKeys.length;
     var rows = Math.floor((numLayouts + 1) / 2);
-    console.log(numLayouts);
+    //console.log(numLayouts);
 
     if(numLayouts > 0) {
 	var height = (100 / rows) - 0.01;
@@ -219,7 +219,7 @@ oscPort.on("message", function (msg) {
 	    || removed_nodes.length !== 0
 	    || removed_edges.length !== 0;
 
-	console.log(changed);
+	//console.log(changed);
 	
 	// if yes, update its data
 	if (changed) {

@@ -3,10 +3,10 @@
     "version": "0.0.3",
     "ignore": [],
     "dependencies": {
-        "osc": "2.4.0",
-        "cytoscape": "3.26.0",
+        "osc": "2.4.5",
+        "cytoscape": "3.30.2",
 	"layout-base": "2.0.1",
-	"cose-base": "2.0.0",
+	"cose-base": "2.2.0",
 	"cytoscape-fcose": "2.2.0"	
     }
 }
