@@ -4,9 +4,6 @@
     "ignore": [],
     "dependencies": {
         "osc": "2.4.0",
-        "cytoscape": "3.26.0",
-	"layout-base": "2.0.1",
-	"cose-base": "2.0.0",
-	"cytoscape-fcose": "2.2.0"	
+	"vivagraphjs": "0.12.0"
     }
 }
